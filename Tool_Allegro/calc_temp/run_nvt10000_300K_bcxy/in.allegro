@@ -1,0 +1,45 @@
+units        metal
+boundary     p p p
+atom_style   atomic
+atom_modify  sort 10000 1.0
+newton       on
+read_data    Ni-Gez0.9.lmp
+pair_style   allegro
+pair_coeff   * * s-all8_100.pth Ge Ni
+neighbor     2.0 bin
+neigh_modify every 1 delay 0 check yes
+thermo       100
+thermo_modify lost ignore flush no
+thermo_style custom step temp pe ke etotal press vol econserve
+timestep     0.001
+
+group        fix_lay id <= 64
+group        mov_lay id 65:1232
+
+fix          1 mov_lay nve
+min_style    cg
+dump         1 all xyz 100 trajectory_cg.xyz
+dump_modify  1 sort id element Ge Ni append no
+minimize     1e-25 1e-25 50000 100000
+undump       1
+
+dump         1 all custom 1 stable.final id type xs ys zs
+dump_modify  1 sort id
+run          0
+undump       1
+unfix        1
+
+fix          1 all nvt temp 300 300 0.05 
+fix          2 fix_lay setforce 0 0 0
+velocity     mov_lay create 300 12345 mom yes rot yes dist gaussian
+dump         1 all xyz 100 trajectory.xyz
+dump_modify  1 sort id element Ge Ni append no
+run          10000
+undump       1
+unfix        1
+unfix        2
+
+
+dump         1 all custom 1 calc.final id type xs ys zs
+dump_modify  1 sort id
+run          0
