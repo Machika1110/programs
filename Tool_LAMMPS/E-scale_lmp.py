@@ -2,7 +2,6 @@ import os
 import re
 import math
 import openpyxl as px
-from openpyxl.chart import ScatterChart, Reference, Series
 from scale_lmp import scaler
 import matplotlib.pyplot as plt
 
