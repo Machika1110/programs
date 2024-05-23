@@ -73,13 +73,16 @@ wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
 ### comb_train.py
 &emsp;訓練データの拡張.xyzファイル（vasprun.xmlをxml_to_extxyz.pyで変換）をまとめて一つのファイルへ格納する。
 
+## 3. Tool_HDNNP
+### comb_inputdata.py
+&emsp;HDNNP用の訓練データinput.data形式のファイルを結合する。
 
-## 3. Tool_LAMMPS
+## 4. Tool_LAMMPS
 ### trace_lmp.py
 log.lammpsで出力された計算過程をグラフ化。  
 表はExcel、グラフは.jpg形式でフォルダにまとめて出力。
 
-## 4. Tool_VASP
+## 5. Tool_VASP
 ### calc_mlff_***.py
 ctifor : 閾値を継続  
  shot  : 原子を追加し、発射する  
@@ -107,3 +110,6 @@ POSCAR内の原子を一部固定する。singleはz方向の小さい方、doub
 
 ### xml_to_extxyz.py
 第一原理MDのvasprun.xmlから、Allegro・NequIP用の訓練データファイルを作成。freqで取り出す間隔を決められる。出力ファイル名の数字は訓練データの数。
+
+### xml_to_inputdata.py
+第一原理MDのvasprun.xmlから、HDNNP用の訓練データファイルを作成。freqで取り出す間隔を決められる。出力ファイル名の数字は訓練データの数。
