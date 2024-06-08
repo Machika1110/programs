@@ -4,9 +4,9 @@ import math
 import numpy as np
 
 # Parameters
-atom_name = ["ZnS"]
-atom_list = [["Zn", "S"]]
-lattice_list = [5.4093]
+atom_name = ["ZnS", "GaAS"]
+atom_list = [["Zn", "S"], ["Ga", "As"]]
+lattice_list = [5.4093, 5.6754]
 print("Select atoms from following: ")
 for i in range(len(atom_list)):
     print("{} : {}".format(i, atom_name[i]))

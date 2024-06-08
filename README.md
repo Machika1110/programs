@@ -82,6 +82,9 @@ wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
 log.lammpsで出力された計算過程をグラフ化。  
 表はExcel、グラフは.jpg形式でフォルダにまとめて出力。
 
+### ratio-gaussian.py
+calc.finalなどのlammpsのdumpファイルから、ｚ方向の各原子の濃度分布を縦軸、ｚ座標を横軸に取ったグラフ（.png）と表（.xlsx）を出力する。
+
 ## 5. Tool_VASP
 ### calc_mlff_***.py
 ctifor : 閾値を継続  
