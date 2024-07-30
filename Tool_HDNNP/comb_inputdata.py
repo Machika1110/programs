@@ -60,7 +60,6 @@ if __name__ == "__main__":
     for i in range(len(lines)):
         if 'comment' in lines[i]:
             data_count += 1
-            print(data_count)
             lines[i] = "comment source_file_name=vasprun.xml structure_number={}".format(data_count)
 
     # Write the modified content back to the file
