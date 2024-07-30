@@ -1,6 +1,6 @@
 # CALC_PROGRAM 説明
 文責：内藤  
-更新日：2024/05/16  
+更新日：2024/07/30  
 &emsp;CALC_PROGRAM内のフォルダの説明及びメモ。
 ## 0. アップロード方法
 1. git pull origin main
@@ -116,3 +116,13 @@ POSCAR内の原子を一部固定する。singleはz方向の小さい方、doub
 
 ### xml_to_inputdata.py
 第一原理MDのvasprun.xmlから、HDNNP用の訓練データファイルを作成。freqで取り出す間隔を決められる。出力ファイル名の数字は訓練データの数。
+
+## 6. other
+### convert-data.py  
+n2p2用の訓練データファイルinput.dataとAllegro・NequIP用訓練データファイル拡張xyzファイルを変換するプログラム。
+
+### extxyz-to-input.py  
+前述の通り
+
+### input-to-extxyz.py  
+前述の通り
