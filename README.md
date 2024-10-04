@@ -33,7 +33,7 @@ rutile.py|ルチル型構造|$\mathrm {SiO_2, GeO_2}$
 trigonal.py|単体の三方晶系|$\mathrm {Sb, Te}$
 wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
 
-### 使い方 (stack.py以外) 
+### 使い方 (表の構造) 
 1. 下の表を参考に、作成したい構造のプログラムを実行する。  
 
         $ python *****.py
@@ -65,6 +65,9 @@ wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
 6. くっつけた後のファイル名を入力。
    
         Please input the name of the converted file:
+
+### cycro-SiGe
+Si：Ge＝1：1の混晶のプログラム。SiGe混晶の構造を作成後、DFSアルゴリズムに基づき、SiおよびGeの**単体の六員環構造**を含んでいるかどうかも出力。
 
 ## 2. Tool_Allegro
 ### calc_temp
