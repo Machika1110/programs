@@ -5,7 +5,8 @@ from ase.neighborlist import NeighborList
 import numpy as np
 import random
 
-# neighbor listで結合管理？
+# dfs function : Based on DFS algorithm
+# !! You must confirm appropriate radii  !!
 
 def get_input_cell_size():
     # Ask user for the cell size
@@ -154,7 +155,7 @@ view(structure)  # Optional, to visualize the structure
 structure.write('cycro-SiGe.lmp', format='lammps-data')
 
 # Load the provided file and inspect the first few lines to identify the right position for the insertion.
-file_path = 'SiGe-cycro.lmp'
+file_path = 'cycro-SiGe.lmp'
 
 # six-membered analysis and output
 radii = 2.4  # Approximate cutoff for Si-Ge bonds
@@ -183,10 +184,10 @@ with open(file_path, 'r') as file:
 
 # Lines to be inserted after line 8
 lines_to_insert = [
-    'Masses\n',
+    '\nMasses\n',
     '\n',
     '1 28.0855\n',
-    '2 58.6934\n',
+    '2 72.612\n',
     '\n'
 ]
 
