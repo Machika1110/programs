@@ -148,10 +148,34 @@ def find_six_membered_rings(structure, nl):
     
     return unique_rings, si_count, ge_count
 
+def replace_random_atom_in_ring(ring, structure):
+    random_atom = random.choice(ring)
+    if structure[random_atom].symbol == 'Si':
+        structure[random_atom].symbol = 'Ge'
+    else:
+        structure[random_atom].symbol = 'Si'
 
-# Generate the structure and view it
+def balance_si_ge(structure):
+    num_si = sum(1 for atom in structure if atom.symbol == 'Si')
+    num_ge = sum(1 for atom in structure if atom.symbol == 'Ge')
+    
+    if num_si > num_ge:
+        # Replace some Si atoms with Ge
+        diff = (num_si - num_ge) // 2
+        si_atoms = [atom.index for atom in structure if atom.symbol == 'Si']
+        for _ in range(diff):
+            random_atom = random.choice(si_atoms)
+            structure[random_atom].symbol = 'Ge'
+    elif num_ge > num_si:
+        # Replace some Ge atoms with Si
+        diff = (num_ge - num_si) // 2
+        ge_atoms = [atom.index for atom in structure if atom.symbol == 'Ge']
+        for _ in range(diff):
+            random_atom = random.choice(ge_atoms)
+            structure[random_atom].symbol = 'Si'
+
+# Generate the 1st structure and view it
 structure = create_structure()
-view(structure)  # Optional, to visualize the structure
 structure.write('cycro-SiGe.lmp', format='lammps-data')
 
 # Load the provided file and inspect the first few lines to identify the right position for the insertion.
@@ -177,6 +201,45 @@ for i in range(len(rings)):
 print(f"Number of Si six-membered rings: {si_ring}")
 print(f"Number of Ge six-membered rings: {ge_ring}")
 
+
+need_rings = input("Do you want to remove for six-membered rings? (yes/no): ").lower()
+if need_rings != 'yes':
+    print("Skipping six-membered rings search.")
+    exit()
+
+
+max_epochs = 10
+for epoch in range(max_epochs):
+    # Detect six-membered rings
+    rings, si_count, ge_count = find_six_membered_rings(structure, nl)
+    
+    if not rings:
+        print(f"Epoch {epoch}: No six-membered rings found. Exiting.")
+        break
+    else:
+        print(f"Epoch {epoch}: Some six-membered rings found. Continue...")
+        for ring, ring_type in rings:
+            print(f"    Ring of type {ring_type} with atoms: {ring}")
+        print(f"    Number of homogeneous six-membered rings found: {len(rings)}")
+        si_ring = 0
+        ge_ring = 0
+        for i in range(len(rings)):
+            if rings[i][1] == 'Si':
+                si_ring += 1
+            elif rings[i][1] == 'Ge':
+                ge_ring += 1
+        print(f"    Number of Si six-membered rings: {si_ring}")
+        print(f"    Number of Ge six-membered rings: {ge_ring}")
+    
+    # Replace a random atom in one of the rings
+    for ring, ring_type in rings:
+        replace_random_atom_in_ring(ring, structure)
+    
+    # Balance Si and Ge counts
+    balance_si_ge(structure)
+
+
+
 # Add Masses block to lmp file
 # Reading the file contents
 with open(file_path, 'r') as file:
@@ -198,3 +261,5 @@ updated_content = file_content[:8] + lines_to_insert + file_content[8:]
 with open(file_path, 'w') as modified_file:
     modified_file.writelines(updated_content)
 
+
+view(structure)  # Optional, to visualize the structure
