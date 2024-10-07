@@ -6,7 +6,8 @@ import numpy as np
 import random
 
 # dfs function : Based on DFS algorithm
-# !! You must confirm appropriate radii  !!
+# !! You must confirm appropriate radii !!
+comp = 0.20 # comosition of ratio of Germanium
 
 def get_input_cell_size():
     # Ask user for the cell size
@@ -27,7 +28,7 @@ def create_structure():
     si_structure = bulk('Si', 'diamond', a=5.43, cubic=True) * cell_size
     
     num_atoms = len(si_structure)
-    num_ge = num_atoms // 2  # Half of the atoms should be Ge
+    num_ge = int(comp * num_atoms)  # Half of the atoms should be Ge
     # Replace atoms randomly, with seed input
     seed = int(input("Enter a seed value for random replacement: "))
     si_ge_structure = replace_randomly_with_ge(si_structure, num_ge, seed)
@@ -174,7 +175,7 @@ def balance_si_ge(structure):
             random_atom = random.choice(ge_atoms)
             structure[random_atom].symbol = 'Si'
 
-# Generate the 1st structure and view it
+# Generate the 1st structure
 structure = create_structure()
 structure.write('cycro-SiGe.lmp', format='lammps-data')
 
@@ -204,7 +205,7 @@ print(f"Number of Ge six-membered rings: {ge_ring}")
 
 need_rings = input("Do you want to remove for six-membered rings? (yes/no): ").lower()
 if need_rings != 'yes':
-    print("Skipping six-membered rings search.")
+    print("Skipping six-membered rings removing.")
     exit()
 
 
