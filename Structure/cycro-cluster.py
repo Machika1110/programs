@@ -1,13 +1,15 @@
-from ase.io import read, write
+from ase import Atoms
 from ase.build import bulk
-from ase.visualize import view
+from ase.io import write
 from ase.neighborlist import NeighborList
 import numpy as np
 import random
-from collections import deque
-import os
 
-# Helper functions
+# Dummy function to detect six-membered rings
+# In practice, this should implement the real ring detection algorithm
+def replace_atom(atoms, index, symbol):
+    atoms[index].symbol = symbol
+
 def get_input_element(prompt):
     element = input(prompt).strip()
     if element not in ['Si', 'Ge', 'Sn']:
@@ -18,117 +20,203 @@ def get_input_cell_size():
     cell_size = input("Enter the cell size as three integers (e.g., '4 4 10'): ")
     return tuple(map(int, cell_size.split()))
 
-def get_ring_count():
-    return int(input("How many six-membered rings do you want to form? "))
+def is_homogeneous_ring(ring, structure):
+    """
+    Check if all atoms in the ring are either Si or Ge.
+    
+    Parameters:
+    - ring: A list of atom indices representing the ring.
+    - structure: The atomic structure object from ASE.
+    
+    Returns:
+    - True if the ring is composed of only Si or only Ge atoms.
+    """
+    symbols = [structure[i].symbol for i in ring]
+    return all(s == 'Si' for s in symbols) or all(s == 'Ge' for s in symbols)
 
-# Replace atoms in bulk structure
-def replace_atom(atoms, index, symbol):
-    atoms[index].symbol = symbol
+def classify_ring(ring, structure):
+    """
+    Classify whether a ring is made up of Si or Ge atoms.
+    
+    Parameters:
+    - ring: A list of atom indices representing the ring.
+    - structure: The atomic structure object from ASE.
+    
+    Returns:
+    - A string indicating if the ring is 'Si' or 'Ge', or None if it's mixed (shouldn't happen).
+    """
+    symbols = [structure[i].symbol for i in ring]
+    if all(s == 'Si' for s in symbols):
+        return 'Si'
+    elif all(s == 'Ge' for s in symbols):
+        return 'Ge'
+    else:
+        return None  # Shouldn't happen, as mixed rings are filtered out
 
-# Create crystal structure with given dimensions and element
-def create_structure(element, cell_size):
-    structure = bulk(element, 'diamond', a=5.43, cubic=True) * cell_size
-    structure.write('seed-crystal.lmp', format='lammps-data')
-    return structure
+def dfs(atom_index, structure, nl, visited, path, depth, max_depth=6):
+    """
+    Perform depth-first search (DFS) to detect six-membered rings, filtering out mixed Si/Ge rings.
+    
+    Parameters:
+    - atom_index: The current atom in the DFS path.
+    - structure: The atomic structure object from ASE.
+    - nl: NeighborList for finding neighbors of each atom.
+    - visited: A set of atoms already visited in this path.
+    - path: The current path of atoms being explored.
+    - depth: Current depth in the DFS (number of atoms in the path).
+    - max_depth: The depth at which we expect a ring (6 for six-membered rings).
+    
+    Returns:
+    - A list of tuples where each tuple contains the atom indices of a ring and its type ('Si' or 'Ge').
+    """
+    #print(path)
+    if depth == max_depth:
+        # Check if the last atom is connected to the first atom to close the ring
+        neighbors = nl.get_neighbors(atom_index)[0]
+        if path[0] in neighbors:
+            visited.add(atom_index)
+            path.append(atom_index)
+            # Check if the ring is homogeneous (Si or Ge only)
+            if is_homogeneous_ring(path, structure):
+                ring_type = classify_ring(path, structure)
+                return [(path[:], ring_type)]  # Return the ring and its type
+        return []  # No valid ring found
 
-# Find the atom closest to the center of the structure
+    # Add the current atom to the visited set and path
+    visited.add(atom_index)
+    path.append(atom_index)
+    
+    # Get neighbors of the current atom
+    neighbors = nl.get_neighbors(atom_index)[0]
+    rings = []
+    
+    # Visit each neighbor if it's not already in the visited set and not creating loops prematurely
+    for neighbor in neighbors:
+        if neighbor not in visited:
+            rings.extend(dfs(neighbor, structure, nl, visited, path, depth + 1, max_depth))
+    
+    # Backtrack: remove the current atom from the path and visited set
+    path.pop()
+    visited.remove(atom_index)
+    
+    return rings
+
+
+
+def find_six_membered_rings(structure, nl):
+    """
+    Find six-membered homogeneous rings (Si or Ge only) in the structure using DFS.
+    
+    Parameters:
+    - structure: The atomic structure object from ASE.
+    - nl: NeighborList for finding neighbors.
+    
+    Returns:
+    - A list of tuples where each tuple contains a six-membered homogeneous ring's atom indices and its type ('Si' or 'Ge').
+    """
+    rings = []
+    
+    for atom_index in range(len(structure)):
+        visited = set()  # To track visited atoms for each DFS search
+        path = []  # The current path in DFS
+        detected_rings = dfs(atom_index, structure, nl, visited, path, 1)  # Start DFS from this atom
+        
+        for ring in detected_rings[0]:
+            if ring != "Si" and ring != "Ge" and ring != "Sn":
+                #print(ring)
+                rings.append((list(ring)))
+
+    
+    # Optionally, remove duplicate rings (since rings can be found starting from different atoms)
+    #print(rings)
+    return rings
+
 def find_center_atom(atoms):
     center = np.mean(atoms.get_positions(), axis=0)
     distances = np.linalg.norm(atoms.get_positions() - center, axis=1)
+    print(f"The ID of the center of crystal : {np.argmin(distances)}")
     return np.argmin(distances)
 
-# Depth-First Search to form rings
-def dfs_replace_to_form_ring(start_index, atoms, neighbor_list, target_element, formed_rings, target_ring_size=6):
-    """
-    This function uses a depth-first search (DFS) to explore paths from a given atom, aiming to form a 
-    ring of a specified size (e.g., 6-membered ring). When such a ring is found, the atoms involved in 
-    the ring are replaced by the target element.
-    
-    Parameters:
-    - start_index: Index of the starting atom.
-    - atoms: The atomic structure from ASE.
-    - neighbor_list: NeighborList from ASE to track bonded neighbors.
-    - target_element: The element to replace the atoms in the ring.
-    - target_ring_size: Size of the ring to form (default is 6).
-    
-    Returns:
-    - True if a ring was formed and atoms were replaced, False otherwise.
-    """
-    visited = set()
-    stack = [(start_index, [])]  # (current atom index, current path)
-
-    # Perform DFS to find a ring
-    while stack:
-        current, path = stack.pop()
-        # Skip already visited atoms
-        if current in visited:
-            continue
-        visited.add(current)
-        path.append(current)
-        #print(len(path))
-        # If we reach a path of length target_ring_size, check if it's a ring
-        if len(path) == target_ring_size * (formed_rings+1):
-            # Check if the current atom is a neighbor of the start atom, forming a ring
-            neighbors, _ = neighbor_list.get_neighbors(current)
-            #if start_index in neighbors:
-            if True:
-                # We have found a ring; replace atoms in this path
-                for idx in path:
-                    replace_atom(atoms, idx, target_element)
-                return True
-
-        # Explore the neighbors of the current atom
-        neighbors, _ = neighbor_list.get_neighbors(current)
-        for neighbor in neighbors:
-            if neighbor not in visited:
-                stack.append((neighbor, path.copy()))  # Continue DFS with this neighbor
-
-    return False
-
-# Main process
 def main():
-    # Step 1: Get inputs from user
+    # ① Prompt the user to select an atom type from Si, Ge, Sn
     main_element = get_input_element("Select the main crystal element (Si, Ge, Sn): ")
     secondary_elements = [el for el in ['Si', 'Ge', 'Sn'] if el != main_element]
     ring_element = get_input_element(f"Select the element for six-membered rings from {secondary_elements}: ")
-    
+
+    # ② Create a diamond structure and prompt the user for cell expansion size
     cell_size = get_input_cell_size()
-    num_rings = get_ring_count()
-
-    # Step 2: Create the main structure
-    atoms = create_structure(main_element, cell_size)
-
-    # Step 3: Find the center atom and replace with ring element
-    center_atom_idx = find_center_atom(atoms)
-    #print(center_atom_idx)
-    replace_atom(atoms, center_atom_idx, ring_element)
-
-    # Step 4: Setup neighbor list for DFS
-    cutoffs = [2.4] * len(atoms)  # Approximate cutoff for covalent bonding in Si, Ge, Sn
-    neighbor_list = NeighborList(cutoffs, skin=0, sorted=False, self_interaction=False)
-    #print(neighbor_list)
-    neighbor_list.update(atoms)
-
-    # Step 5: Form rings iteratively
-    formed_rings = 0
-    os.mkdir("traj")
-    while formed_rings < num_rings:
-        success = dfs_replace_to_form_ring(center_atom_idx, atoms, neighbor_list, ring_element, formed_rings)
-        atoms.write(f'traj/cycro-cluster-{formed_rings}.lmp', format='lammps-data')
-        if not success:
-            print(f"Failed to form more six-membered rings after {formed_rings} rings.")
-            break
-        formed_rings += 1
-
-        # Save trajectory after each ring is formed
-        # write(f"ring_{formed_rings}.traj", atoms)
-        print(f"Formed {formed_rings} ring(s). Trajectory saved as 'ring_{formed_rings}.traj'.")
     
-    atoms.write('cycro-cluster.lmp', format='lammps-data')
-    print("Process completed.")
+    # Build diamond structure (Si, Ge, Sn are supported as examples)
+    crystal = bulk(main_element, 'diamond', a=5.431, cubic=True)  # a=5.431 is the lattice constant for Si
+    crystal = crystal * cell_size  # Expand the cell
+
+    # Prompt the user for the required number of six-membered rings
+    required_rings = int(input("Enter the required number of six-membered rings: "))
+
+    # ③ Get the central atom's ID and detect all six-membered rings
+    center_atom_id = find_center_atom(crystal) # Assume the central atom is the midpoint of the entire cell
+    
+    # six-membered analysis and output
+    radii = 2.4  # Approximate cutoff for Si-Ge bonds
+    nl = NeighborList([radii / 2] * len(crystal), skin=0.3, bothways=True, self_interaction=False)
+    nl.update(crystal)
+    all_rings = find_six_membered_rings(crystal, nl)
+    print(f"Number of {main_element} six-membered rings: {len(all_rings)}")
+
+    # Find rings that contain the central atom
+    candidate_rings = [ring for ring in all_rings if center_atom_id in ring]
+    #print(candidate_rings)
+
+    # ④ Create a list of candidate atoms for substitution
+    substitution_candidates = []
+    for ring in candidate_rings:
+        substitution_candidates.extend(ring)
+    
+    # Remove duplicates
+    substitution_candidates = list(set(substitution_candidates))
+    print(substitution_candidates)
+    for idx in substitution_candidates:
+        replace_atom(crystal, idx, str(ring_element))
+
+    # ⑤ Find rings that share two or more atoms with the substitution candidate list and add them
+    for _ in range(required_rings - 1):
+        new_candidates = []
+        for ring in all_rings:
+            if len(set(ring).intersection(substitution_candidates)) >= 2:
+                new_candidates.extend(ring)
+        substitution_candidates.extend(new_candidates)
+        substitution_candidates = list(set(substitution_candidates))  # Remove duplicates
 
 
-# Entry point
+    # replace atoms
+    #for idx in substitution_candidates:
+        #replace_atom(crystal, idx, str(ring_element))
+
+    # ⑥ Write the structure in LAMMPS data format
+    # Add Masses block to lmp file
+    # Reading the file contents
+    crystal.write('cycro-cluster.lmp', format='lammps-data')
+    file_path = 'cycro-cluster.lmp'
+    with open(file_path, 'r') as file:
+        file_content = file.readlines()
+
+    # Lines to be inserted after line 8
+    lines_to_insert = [
+    '\nMasses\n',
+    '\n',
+    '1 28.0855\n',
+    '2 72.612\n',
+    '\n'
+    ]
+
+    # Inserting the lines at the 9th position (after index 8)
+    updated_content = file_content[:8] + lines_to_insert + file_content[8:]
+
+    # Saving the modified file
+    with open(file_path, 'w') as modified_file:
+        modified_file.writelines(updated_content)
+
+        print(f'Structure saved in {file_path}')
+
 if __name__ == '__main__':
     main()
-

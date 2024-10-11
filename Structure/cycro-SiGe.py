@@ -6,8 +6,8 @@ import numpy as np
 import random
 
 # dfs function : Based on DFS algorithm
-# !! You must confirm appropriate radii !!
-comp = 0.20 # comosition of ratio of Germanium
+# !! You must confirm appropriate radii  !!
+comp = 0.25
 
 def get_input_cell_size():
     # Ask user for the cell size
@@ -28,7 +28,7 @@ def create_structure():
     si_structure = bulk('Si', 'diamond', a=5.43, cubic=True) * cell_size
     
     num_atoms = len(si_structure)
-    num_ge = int(comp * num_atoms)  # Half of the atoms should be Ge
+    num_ge = int(float(num_atoms) * comp)  # Half of the atoms should be Ge
     # Replace atoms randomly, with seed input
     seed = int(input("Enter a seed value for random replacement: "))
     si_ge_structure = replace_randomly_with_ge(si_structure, num_ge, seed)
@@ -84,28 +84,28 @@ def dfs(atom_index, structure, nl, visited, path, depth, max_depth=6):
     Returns:
     - A list of tuples where each tuple contains the atom indices of a ring and its type ('Si' or 'Ge').
     """
-    if depth > max_depth:
-        return []
-    
-    # Add the current atom to the visited set and path
-    visited.add(atom_index)
-    path.append(atom_index)
-    
-    # If we've reached a depth of 6, check if we have a valid ring
+    #print(path)
     if depth == max_depth:
-        # Check if the last atom in the path is connected to the first
+        # Check if the last atom is connected to the first atom to close the ring
         neighbors = nl.get_neighbors(atom_index)[0]
         if path[0] in neighbors:
+            visited.add(atom_index)
+            path.append(atom_index)
             # Check if the ring is homogeneous (Si or Ge only)
             if is_homogeneous_ring(path, structure):
                 ring_type = classify_ring(path, structure)
                 return [(path[:], ring_type)]  # Return the ring and its type
+        return []  # No valid ring found
+
+    # Add the current atom to the visited set and path
+    visited.add(atom_index)
+    path.append(atom_index)
     
     # Get neighbors of the current atom
     neighbors = nl.get_neighbors(atom_index)[0]
     rings = []
     
-    # Visit each neighbor if it's not already in the visited set
+    # Visit each neighbor if it's not already in the visited set and not creating loops prematurely
     for neighbor in neighbors:
         if neighbor not in visited:
             rings.extend(dfs(neighbor, structure, nl, visited, path, depth + 1, max_depth))
@@ -138,7 +138,8 @@ def find_six_membered_rings(structure, nl):
         
         # Count Si and Ge rings
         for ring, ring_type in detected_rings:
-            rings.append((ring, ring_type))
+            if len(ring) == 6:    
+                rings.append((ring, ring_type))
             if ring_type == 'Si':
                 si_count += 1
             elif ring_type == 'Ge':
@@ -175,8 +176,9 @@ def balance_si_ge(structure):
             random_atom = random.choice(ge_atoms)
             structure[random_atom].symbol = 'Si'
 
-# Generate the 1st structure
+# Generate the structure and view it
 structure = create_structure()
+view(structure)  # Optional, to visualize the structure
 structure.write('cycro-SiGe.lmp', format='lammps-data')
 
 # Load the provided file and inspect the first few lines to identify the right position for the insertion.
@@ -202,12 +204,10 @@ for i in range(len(rings)):
 print(f"Number of Si six-membered rings: {si_ring}")
 print(f"Number of Ge six-membered rings: {ge_ring}")
 
-
-need_rings = input("Do you want to remove for six-membered rings? (yes/no): ").lower()
+need_rings = input("Do you want to search for six-membered rings? (yes/no): ").lower()
 if need_rings != 'yes':
-    print("Skipping six-membered rings removing.")
+    print("Skipping six-membered rings search.")
     exit()
-
 
 max_epochs = 10
 for epoch in range(max_epochs):
@@ -217,20 +217,6 @@ for epoch in range(max_epochs):
     if not rings:
         print(f"Epoch {epoch}: No six-membered rings found. Exiting.")
         break
-    else:
-        print(f"Epoch {epoch}: Some six-membered rings found. Continue...")
-        for ring, ring_type in rings:
-            print(f"    Ring of type {ring_type} with atoms: {ring}")
-        print(f"    Number of homogeneous six-membered rings found: {len(rings)}")
-        si_ring = 0
-        ge_ring = 0
-        for i in range(len(rings)):
-            if rings[i][1] == 'Si':
-                si_ring += 1
-            elif rings[i][1] == 'Ge':
-                ge_ring += 1
-        print(f"    Number of Si six-membered rings: {si_ring}")
-        print(f"    Number of Ge six-membered rings: {ge_ring}")
     
     # Replace a random atom in one of the rings
     for ring, ring_type in rings:
@@ -238,7 +224,6 @@ for epoch in range(max_epochs):
     
     # Balance Si and Ge counts
     balance_si_ge(structure)
-
 
 
 # Add Masses block to lmp file
@@ -261,6 +246,3 @@ updated_content = file_content[:8] + lines_to_insert + file_content[8:]
 # Saving the modified file
 with open(file_path, 'w') as modified_file:
     modified_file.writelines(updated_content)
-
-
-view(structure)  # Optional, to visualize the structure
