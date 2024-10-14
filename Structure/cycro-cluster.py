@@ -192,7 +192,7 @@ def main():
             candidate_rings.extend([ring for ring in all_rings if int(idx) in ring])
             candidate_rings = list(set(tuple(ring) for ring in candidate_rings))
             if len(candidate_rings) > required_rings:
-                print(len(candidate_rings))
+                #print(len(candidate_rings))
                 select_rings = candidate_rings[:required_rings]
                 for ring in select_rings:
                     substitution_candidates.extend(ring)
@@ -203,6 +203,8 @@ def main():
     # replace atom
     for idx in substitution_candidates:
             replace_atom(crystal, idx, str(ring_element))
+
+    print(f"All atom : {len(crystal)}")
     print(f"{len(substitution_candidates)} {main_element} atoms -> {ring_element} atoms transformed.")
 
     # ⑤ Find rings that share two or more atoms with the substitution candidate list and add them
