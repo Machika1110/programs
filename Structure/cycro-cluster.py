@@ -1,3 +1,4 @@
+# make IV mixed crystal with specific 6 membered rings !!
 from ase import Atoms
 from ase.build import bulk
 from ase.io import write
@@ -7,6 +8,13 @@ import random
 
 # Dummy function to detect six-membered rings
 # In practice, this should implement the real ring detection algorithm
+num_rings = 0
+mass = {
+    "Si": 28.085,  # silicon
+    "Ge": 72.63,   # Germanium
+    "Sn": 118.71   # Tin
+    } 
+
 def replace_atom(atoms, index, symbol):
     atoms[index].symbol = symbol
 
@@ -161,32 +169,52 @@ def main():
     nl = NeighborList([radii / 2] * len(crystal), skin=0.3, bothways=True, self_interaction=False)
     nl.update(crystal)
     all_rings = find_six_membered_rings(crystal, nl)
-    print(f"Number of {main_element} six-membered rings: {len(all_rings)}")
+    #print(f"Number of {main_element} six-membered rings: {len(all_rings)}")
 
-    # Find rings that contain the central atom
-    candidate_rings = [ring for ring in all_rings if center_atom_id in ring]
-    #print(candidate_rings)
-
-    # ④ Create a list of candidate atoms for substitution
+    # Increase rings candidate
     substitution_candidates = []
-    for ring in candidate_rings:
-        substitution_candidates.extend(ring)
+    candidate_rings = [ring for ring in all_rings if center_atom_id in ring]
+
+    select_rings = []
+    if len(candidate_rings) >= required_rings:
+        select_rings = random.sample(candidate_rings, required_rings)
+        for ring in select_rings:
+            #print(ring)
+            substitution_candidates.extend(ring)
+        substitution_candidates = list(set(substitution_candidates))
+        #print(substitution_candidates)
+
+    while len(candidate_rings) < required_rings:
+        for ring in candidate_rings:
+            substitution_candidates.extend(ring)
+        substitution_candidates = list(set(substitution_candidates))
+        for idx in substitution_candidates:
+            candidate_rings.extend([ring for ring in all_rings if int(idx) in ring])
+            candidate_rings = list(set(tuple(ring) for ring in candidate_rings))
+            if len(candidate_rings) > required_rings:
+                print(len(candidate_rings))
+                select_rings = candidate_rings[:required_rings]
+                for ring in select_rings:
+                    substitution_candidates.extend(ring)
+                substitution_candidates = list(set(substitution_candidates))
+                break
+
     
-    # Remove duplicates
-    substitution_candidates = list(set(substitution_candidates))
-    print(substitution_candidates)
+    # replace atom
     for idx in substitution_candidates:
-        replace_atom(crystal, idx, str(ring_element))
+            replace_atom(crystal, idx, str(ring_element))
+    print(f"{len(substitution_candidates)} {main_element} atoms -> {ring_element} atoms transformed.")
 
     # ⑤ Find rings that share two or more atoms with the substitution candidate list and add them
-    for _ in range(required_rings - 1):
-        new_candidates = []
-        for ring in all_rings:
-            if len(set(ring).intersection(substitution_candidates)) >= 2:
-                new_candidates.extend(ring)
-        substitution_candidates.extend(new_candidates)
-        substitution_candidates = list(set(substitution_candidates))  # Remove duplicates
+    #for _ in range(required_rings - 1):
+        #new_candidates = []
+        #for ring in all_rings:
+            #if len(set(ring).intersection(substitution_candidates)) >= 2:
+                #new_candidates.extend(ring)
+        #substitution_candidates.extend(new_candidates)
+        #substitution_candidates = list(set(substitution_candidates))  # Remove duplicates
 
+    #print(substitution_candidates)
 
     # replace atoms
     #for idx in substitution_candidates:
@@ -204,8 +232,8 @@ def main():
     lines_to_insert = [
     '\nMasses\n',
     '\n',
-    '1 28.0855\n',
-    '2 72.612\n',
+    f'1 {mass[ring_element]}\n',
+    f'2 {mass[main_element]}\n',
     '\n'
     ]
 

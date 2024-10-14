@@ -1,3 +1,4 @@
+# make SiGe crystal with 6 membered rings randomly !!
 from ase.io import read
 from ase.build import bulk
 from ase.visualize import view
@@ -145,7 +146,6 @@ def find_six_membered_rings(structure, nl):
             elif ring_type == 'Ge':
                 ge_count += 1
     
-    # Optionally, remove duplicate rings (since rings can be found starting from different atoms)
     unique_rings = [list(t) for t in {tuple(sorted(ring[0])): ring[1] for ring in rings}.items()]
     
     return unique_rings, si_count, ge_count
