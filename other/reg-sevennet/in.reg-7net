@@ -1,0 +1,20 @@
+units        metal
+boundary     p p p
+atom_style   atomic
+atom_modify  sort 10000 1.0
+newton       on
+box          tilt large
+read_data    tmp.lmp
+pair_style   e3gnn
+pair_coeff
+neighbor     2.0 bin
+neigh_modify every 1 delay 0 check yes
+thermo       100
+thermo_modify lost ignore flush no
+thermo_style custom step temp pe ke etotal press vol econserve
+timestep     0.001
+
+dump         1 all custom 1 calc.final id type x y z
+dump_modify  1 sort id
+run          0
+undump       1

@@ -66,6 +66,9 @@ wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
    
         Please input the name of the converted file:
 
+### cycro-cluster
+Si、Ge、Snからいずれかの1つで結晶、およびそれ以外の1つで六員環クラスターを作成。結晶の中心から六員環が指定した個数分増えていき、クラスターを形成する。DFSアルゴリズムに基づく。
+
 ### cycro-SiGe
 Si：Ge＝1：1の混晶のプログラム。SiGe混晶の構造を作成後、DFSアルゴリズムに基づき、SiおよびGeの**単体の六員環構造**を含んでいるかどうかも出力。
 
@@ -73,8 +76,16 @@ Si：Ge＝1：1の混晶のプログラム。SiGe混晶の構造を作成後、D
 ### calc_temp
 &emsp;AllegroでLAMMPS計算を行う際のテンプレート
 
-### comb_train.py
+### reg-sample
+Allegro専用。訓練データファイルを読み、そこから回帰図を出力する
+
+### comb-train.py
 &emsp;訓練データの拡張.xyzファイル（vasprun.xmlをxml_to_extxyz.pyで変換）をまとめて一つのファイルへ格納する。
+
+### sort-train.py
+データを訓練データ→検証用データへ並び替える。rate_seq = 0.1なら、  
+&emsp;&emsp;9 1 9 1 9 1・・・9 1 9 1 → 9 9 9 9 ・・・ 9 1 1 ・・・ 1 1  
+のように並び替える。
 
 ## 3. Tool_HDNNP
 ### comb_inputdata.py
@@ -129,3 +140,6 @@ n2p2用の訓練データファイルinput.dataとAllegro・NequIP用訓練デ�
 
 ### input-to-extxyz.py  
 前述の通り
+
+### reg-sevennet
+Allegroと同様、訓練データファイルを読み、そこから回帰図を出力する
