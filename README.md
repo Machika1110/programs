@@ -16,15 +16,15 @@
 
 |プログラム名|結晶構造名|対応化合物|
 ---|---|---
-SiO2_all.py|$\mathrm {SiO_2}$ の構造 | α-quartz, β-quartz, β-tridymite,  α-cristobalite, β-cristobalite, stishovite
-bcc.py|体心立方構造|W, Cr, Fe
+SiO2_all.py|$\mathrm {SiO_2}$ の構造 |$α-quartz, β-quartz, β-tridymite,  α-cristobalite, β-cristobalite, stishovite$
+bcc.py|体心立方構造|$\mathrm {W, Cr, Fe}$
 corundum.py|コランダム構造|$\mathrm {Al_2O_3}$
-cubic.py|単体の立方晶系|Sb, Te
+cubic.py|単体の立方晶系|$\mathrm {Sb, Te}$
 diamond.py|ダイヤモンド構造|$\mathrm {C, Si, Ge, Sn}$
 diamond_mc.py|ダイヤモンド構造混晶|$\mathrm {SiC, SiGe, SiSn, GeSn}$
-fcc.py|面心立方構造|Au, Ag, Cu, Fe, Al, Co
+fcc.py|面心立方構造|$\mathrm {Au, Ag, Cu, Fe, Al, Co}$
 fluorite.py|蛍石型構造|$\mathrm {CaF_2, CeO_2}$
-hcp.py|六方最密充填構造|Co, Ru
+hcp.py|六方最密充填構造|$\mathrm {Co, Ru}$
 hexagonal.py|単体の六方晶系|$\mathrm {Co, Ru}$
 perovskite.py|ペロブスカイト構造|$\mathrm {BaTiO_3, CaTiO_3}$
 rocksalt.py|岩塩型構造|$\mathrm { Ge-Sb-Te, NaCl, MgO, CaO}$
@@ -66,10 +66,11 @@ wurtzite.py|ウルツ型構造|$\mathrm {ZnO, ZnS, BeO, BN, GaN}$
    
         Please input the name of the converted file:
 
-### cycro-cluster
+### その他特殊な構造
+#### cycro-cluster
 Si、Ge、Snからいずれかの1つで結晶、およびそれ以外の1つで六員環クラスターを作成。結晶の中心から六員環が指定した個数分増えていき、クラスターを形成する。DFSアルゴリズムに基づく。
 
-### cycro-SiGe
+#### cycro-SiGe
 Si：Ge＝1：1の混晶のプログラム。SiGe混晶の構造を作成後、DFSアルゴリズムに基づき、SiおよびGeの**単体の六員環構造**を含んでいるかどうかも出力。
 
 ## 2. Tool_Allegro
@@ -90,6 +91,9 @@ Allegro専用。訓練データファイルを読み、そこから回帰図を�
 ## 3. Tool_HDNNP
 ### comb_inputdata.py
 &emsp;HDNNP用の訓練データinput.data形式のファイルを結合する。
+
+### reg-hdnnp.py
+&emsp;HDNNPの訓練データinput.dataからパリティプロットを作成する。
 
 ## 4. Tool_LAMMPS
 ### trace_lmp.py
